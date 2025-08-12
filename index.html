@@ -1,0 +1,137 @@
+
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Marktplaats Flip Helper</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <header>
+    <h1>Marktplaats Flip Helper</h1>
+    <p class="sub">Zoek publieke resultaten, analyseer met AI, en krijg kant-en-klare antwoorden.</p>
+  </header>
+
+  <section class="card">
+    <form method="POST" class="grid" autocomplete="off">
+      <div class="field">
+        <label>Zoekwoord</label>
+        <input type="text" name="keyword" placeholder="koffiemachine kapot" value="{{ keyword or '' }}" required>
+      </div>
+      <div class="field">
+        <label>Taal</label>
+        <select name="language">
+          <option value="nl" {% if not prefs or prefs.language=='nl' %}selected{% endif %}>Nederlands</option>
+          <option value="en" {% if prefs and prefs.language=='en' %}selected{% endif %}>English</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Max budget (€)</label>
+        <input type="text" name="max_budget" placeholder="75" value="{{ (prefs.max_budget if prefs else '') }}">
+      </div>
+      <div class="field">
+        <label>Voorkeursmerken (komma-gescheiden)</label>
+        <input type="text" name="preferred_brands" placeholder="DeLonghi, Philips, Siemens" value="{{ (prefs.preferred_brands|join(', ') if prefs and prefs.preferred_brands else '') }}">
+      </div>
+      <div class="field">
+        <label>Strategie</label>
+        <input type="text" name="strategy" placeholder="vriendelijk maar vastberaden" value="{{ (prefs.strategy if prefs else '') }}">
+      </div>
+      <div class="field">
+        <label>Afstand / ophalen (optioneel)</label>
+        <input type="text" name="distance_note" placeholder="Binnen 20 km, kan vandaag ophalen">
+      </div>
+      <div class="actions">
+        <button type="submit">Zoeken & Analyseren</button>
+      </div>
+    </form>
+    <p class="disclaimer">
+      Let op: dit tooltje automatiseert <strong>geen</strong> berichten of onderhandelingen. Je kopieert de suggesties zelf naar Marktplaats.
+    </p>
+  </section>
+
+  {% if analysis %}
+  <section class="card">
+    <h2>AI-analyse (shortlist & aandachtspunten)</h2>
+    <pre class="mono">{{ analysis }}</pre>
+  </section>
+  {% endif %}
+
+  {% if results %}
+  <section class="card">
+    <h2>Resultaten (publieke zoekresultaten)</h2>
+    <ul class="results">
+      {% for item in results %}
+      <li class="result">
+        <div class="left">
+          <a class="title" href="{{ item.url }}" target="_blank" rel="noopener">{{ item.title }}</a>
+          <div class="meta">
+            <span>{{ item.price_raw or 'Prijs n.b.' }}</span>
+            {% if item.location %}<span>• {{ item.location }}</span>{% endif %}
+          </div>
+        </div>
+
+        {% if recs.get(loop.index0) %}
+        <div class="suggestions">
+          <h3>Antwoord- & onderhandelingssuggesties</h3>
+
+          <div class="msg">
+            <div class="label">Eerste bericht</div>
+            <pre class="mono" id="opener-{{ loop.index0 }}">{{ recs[loop.index0]["opener"] }}</pre>
+            <button class="copy" data-target="opener-{{ loop.index0 }}">Kopieer</button>
+          </div>
+
+          {% if recs[loop.index0]["follow_up"] %}
+          <div class="msg">
+            <div class="label">Vervolgvraag</div>
+            <pre class="mono" id="follow-{{ loop.index0 }}">{{ recs[loop.index0]["follow_up"] }}</pre>
+            <button class="copy" data-target="follow-{{ loop.index0 }}">Kopieer</button>
+          </div>
+          {% endif %}
+
+          {% if recs[loop.index0]["first_offer"] %}
+          <div class="msg">
+            <div class="label">Eerste bod</div>
+            <pre class="mono" id="offer-{{ loop.index0 }}">{{ recs[loop.index0]["first_offer"] }}</pre>
+            <button class="copy" data-target="offer-{{ loop.index0 }}">Kopieer</button>
+          </div>
+          {% endif %}
+
+          {% if recs[loop.index0]["counter_offer"] %}
+          <div class="msg">
+            <div class="label">Tegenbod</div>
+            <pre class="mono" id="counter-{{ loop.index0 }}">{{ recs[loop.index0]["counter_offer"] }}</pre>
+            <button class="copy" data-target="counter-{{ loop.index0 }}">Kopieer</button>
+          </div>
+          {% endif %}
+
+          {% if recs[loop.index0]["walkaway_line"] %}
+          <div class="msg">
+            <div class="label">Netjes afhaken</div>
+            <pre class="mono" id="walk-{{ loop.index0 }}">{{ recs[loop.index0]["walkaway_line"] }}</pre>
+            <button class="copy" data-target="walk-{{ loop.index0 }}">Kopieer</button>
+          </div>
+          {% endif %}
+
+          {% if recs[loop.index0]["quick_notes"] %}
+          <div class="msg">
+            <div class="label">Notities</div>
+            <pre class="mono">{{ recs[loop.index0]["quick_notes"] }}</pre>
+          </div>
+          {% endif %}
+        </div>
+        {% endif %}
+      </li>
+      {% endfor %}
+    </ul>
+  </section>
+  {% endif %}
+
+  <footer>
+    <small>Gebruik dit als hulpmiddel; respecteer platformregels & wetgeving.</small>
+  </footer>
+
+  <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
